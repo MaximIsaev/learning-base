@@ -1,7 +1,14 @@
 # Spring Cloud
 
-* [Spring cloud config](#spring-cloud-config)
-* [Spring Config основные параметры](#spring-config-основные-параметры)
+* [Spring Cloud Config](#spring-cloud-config)
+* [Spring Cloud Service Discovery (Eureka)](#spring-cloud-service-discovery-eureka)
+* [Шаблоны устойчивости на стороне клиента](#шаблоны-устойчивости-на-стороне-клиента)
+  * [CircuitBreaker](#circuitbreaker)
+  * [BulkHead](#bulkhead)
+  * [Retry](#retry)
+  * [RateLimiter](#ratelimiter)
+  * [ThreadLocal и Resilience4J](#threadlocal-и-resilience4j)
+* [Spring Cloud Gateway](#gateway)
 
 ### Spring cloud config
 
