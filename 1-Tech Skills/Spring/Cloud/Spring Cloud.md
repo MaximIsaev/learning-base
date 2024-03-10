@@ -1,25 +1,27 @@
 # Spring Cloud
-
-* [Spring Cloud Config](#spring-cloud-config)
-* [Spring Cloud Service Discovery (Eureka)](#spring-cloud-service-discovery-eureka)
-* [Шаблоны устойчивости на стороне клиента](#шаблоны-устойчивости-на-стороне-клиента)
-  * [CircuitBreaker](#circuitbreaker)
-  * [BulkHead](#bulkhead)
-  * [Retry](#retry)
-  * [RateLimiter](#ratelimiter)
-  * [ThreadLocal и Resilience4J](#threadlocal-и-resilience4j)
-* [Spring Cloud Gateway](#gateway)
+<!-- TOC -->
+* [Spring Cloud](#spring-cloud)
+    * [Spring cloud config](#spring-cloud-config)
+    * [Spring Cloud Service Discovery (Eureka)](#spring-cloud-service-discovery-eureka)
+    * [Шаблоны устойчивости на стороне клиента](#шаблоны-устойчивости-на-стороне-клиента)
+      * [CircuitBreaker](#circuitbreaker)
+      * [BulkHead](#bulkhead)
+      * [Retry](#retry)
+      * [RateLimiter](#ratelimiter)
+    * [ThreadLocal и Resilience4J](#threadlocal-и-resilience4j)
+    * [Spring Cloud Gateway](#spring-cloud-gateway)
+<!-- TOC -->
 
 ### Spring cloud config
 
-#### Client:
+**Client**
 * Подключение: spring-cloud-starter-config
 * `@RefreshScope` обновляет конфиг в тех бинах, где указан, т.е. указывать надо не где main метод, а в конкретном сервисе.
 * Указание конфиг сервера – spring.config.import=optional:configserver:<server_address>
 * Для обновления бинов и конфигов нужно явно вызвать actuator/refresh
 * Загружает тот профиль, что указан в spring.profiles.active
 
-#### Config:
+**Config**
 * Подключение: spring-cloud-config-server + @EnableConfigServer
 * Native – спец профиль для подключения конфига на локальной машине из папки
 * Указать путь к конфигу на локальной машине: spring.cloud.config.server.native.search-locations: file:///<путь>
@@ -33,13 +35,13 @@
 * force-pull – забирает данные, если локальная копия изменилась
 * git аутентификация – по умолчанию используется ssh для удаленного репозитория. Можно использоваться username и password. Либо указать параметры hostKeyAlgorithm и privateKey с приватным ключом и алгоритмом для аутентификации по SSH
 
-#### Actuator:
+**Actuator**
 * `/refresh` по умолчанию недоступен
 * Включены по умолчанию все эндпоинты, но expose(отображаются) только info и health
 * Для отображения(expose) надо задать management.endpoints.web.exposure.include=* или «*» для yaml или перечислить конкретные эндпоинты
 * `/refresh` это POST запрос
 
-#### Spring Config основные параметры
+**Spring Config основные параметры**
 ```yaml
 spring:
   application:
@@ -61,7 +63,7 @@ server:
   port: # порт приложения
 ```
 
-#### Spring основные аннотации
+**Spring основные аннотации**
 * `@Value("${param.name}")` - Подставляет значение из конфиг файла
 * `@RestController` - Указание, что это REST контроллер
 * `@RefreshScope` - Обновление бинов и конфигов динамически после вызова POST actuator/refresh
@@ -72,7 +74,7 @@ server:
 
 ### Spring Cloud Service Discovery (Eureka)
 
-#### Eureka Server
+**Eureka Server**
 * Добавить зависимость spring-cloud-starter-netflix-eureka-server
 * Аннотировать конфиг `@EnableEurekaServer`
 * По дефолту регистрирует сервисы в течение 30 секунд
@@ -80,7 +82,7 @@ server:
 * Evicting services – процесс отключения сервисов из Eureka
 * self-preservation – процесс, когда Eureka перестает отключать сервисы, в силу слабой сети, когда сервис жив, но не могут пока до него достучаться, пока не пройдет порог(renewal rate)
 
-#### Eureka Server Self Preservation Config
+**Eureka Server Self Preservation Config**
 ```yaml
 server:
   port: # порт сервиса Eureka, деф. 8761
@@ -98,7 +100,7 @@ eureka: # блок для конфига Eureka
     lease-expiration-duration-in-seconds: # Время с последнего ответа от сервиса, в течение которого Eureka ждет, прежде, чем удалить сервис из registry, дефолт 90сек
 ```
 
-#### Eureka client
+**Eureka client**
 * Зависимость `spring-cloud-starter-netflix-eureka-client`, опционально `open-feign` для запросов через название сервисов автоматическим load balancer
 * Никаких спец аннотация не нужно, сервис автоматически попытается зарегистрироваться в Eureka
 * ID сервиса(по которому он регистрируется) – spring.application.name
@@ -106,7 +108,7 @@ eureka: # блок для конфига Eureka
 * eureka.instance.preferIpAddress: true/false – регистрация по IP адресу или названию сервиса. Предпочтительней по IP, т.к. сервисы обычно будут в докере и его название всегда разное и придется контролировать везде указанное название
 
 
-#### Feign
+**Feign**
 * Тулза от Netflix, которая помогает делать REST запросы
 * Определить интерфейс
 * Аннотировать его @FeignClient(name=<имя вызываемого сервиса>). Дополнительно можно указать URL.
@@ -143,7 +145,7 @@ eureka: # блок для конфига Eureka
   * *FORCED_OPEN – доп состояние, все запросы всегда не проходят, выходить из него принудительно
 * Использует кольцевой битой буффер(1 – неуспешные запросы, 0 - успешные). Только при полном заполнении, сможет рассчитать коэффициент отказа и перейти в другое состояние
 
-##### Конфиг
+**Конфиг**
 
 ```yaml
 resilience4j.circuitbreaker: # конфиг для шаблона размыкателя
@@ -167,7 +169,7 @@ resilience4j.circuitbreaker: # конфиг для шаблона размыка
 * Используется совместно с CircuitBreaker (? Точно ли, в книге так)
 * @BulkHead(name=<имя>, fallback=<резервный метод>, type=<тип, по умолчанию SEMAPHOR>)
 
-##### Конфиг
+**Конфиг**
 
 ```yaml
 resilience4j.bulkhead: # конфиг для шаблона герметичных отсеков
@@ -187,7 +189,7 @@ resilience4j.bulkhead: # конфиг для шаблона герметичны
 * Используется для повторного вызова
 * `@Retry(name = "petsserviceretry", fallbackMethod = "getDefaultFood")`
 
-##### Конфиг
+**Конфиг**
 ```yaml
 resilience4j.retry: # конфиг для шаблона повторных запросов
   instances:
@@ -209,7 +211,7 @@ resilience4j.retry: # конфиг для шаблона повторных за
 * SemaphorBasedRateLimiter – самый простой
 * `@RateLimiter(name = "petsserviceratelimiter", fallbackMethod = "getDefaultFood")`
 
-##### Конфиг
+**Конфиг**
 ```yaml
 resilience4j.ratelimiter:
   instances:
@@ -219,13 +221,13 @@ resilience4j.ratelimiter:
       limitForPeriod: 5 # кол-во вызовов, разрешенных в течение периода времени limitRefreshPeriod
 ```
 
-#### ThreadLocal и Resilience4J
+### ThreadLocal и Resilience4J
 * Шаблоны и аннотации декорируют классы и есть много одновременных потоков, которыми управляют в них
 * Чтобы использовать общий контекст, например идентификатор корреляции или что-то, что должно быть доступно из всех потоков, то можно использовать ThreadLocal переменную.
 * Для ThreadLocal переменной можно создать переменную ContextHolder(пример) и хранить нужную переменную в этом классе, закрыв все методы редактирования, своего рода Singleton.
 
 
-#### Gateway
+### Spring Cloud Gateway
 
 * Используется для перенаправления запросов
 * Единая точка входа в приложение
@@ -253,7 +255,7 @@ management:
 * GlobalFilter – интерфейс для определения pre- фильтра
 * AbstractGatewayFilterFactory – класс фабрики для создания своего фильтра, для конкретного маршрута
 
-Пример pre- фильтра
+**Пример pre- фильтра**
 ```java
 @Component
 @Order(1)
@@ -280,7 +282,7 @@ public class CommonFilter implements GlobalFilter {
 }
 ```
 
-Пример post- фильтра
+**Пример post- фильтра**
 ```java
 @Configuration
 public class PostFilter {
@@ -294,7 +296,7 @@ public class PostFilter {
 }
 ```
 
-##### Конфиг
+**Конфиг**
 ```yaml
 spring:
   application:
